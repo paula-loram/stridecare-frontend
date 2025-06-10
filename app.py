@@ -10,7 +10,7 @@ st.markdown(
     """
     <style>
     .stApp {
-        background-color: #D5F5E3;
+        background-color: #83bbf7;
     }
     </style>
     """,
@@ -26,7 +26,8 @@ img = img.resize((1000, 500))
 # Display the resized image
 st.image(img)
 
-st.title("Injury Detection from Video")
+st.title("StrideCare")
+st.subheader("Analyze your stride, strengthen your run, prevent injuries.")
 
 # for rerun:
 # @st.cache_resource - to reuse the same model
@@ -58,10 +59,10 @@ gender = st.radio("", ["Male", "Female"])
 
 
 
-st.write(f"Your age is {age} years.")
-st.write(f"Your weight is {weight} kg.")
-st.write(f"Your height is {height} cm.")
-st.write(f"You selected: {gender}")
+#st.write(f"Your age is {age} years.")
+#st.write(f"Your weight is {weight} kg.")
+#st.write(f"Your height is {height} cm.")
+#st.write(f"You selected: {gender}")
 
 
 video_file = st.file_uploader("Upload a video of yourself running:", type=["mp4", "mov", "avi"])
