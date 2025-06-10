@@ -1,8 +1,12 @@
 import streamlit as st
 import tempfile
 from PIL import Image
+import cv2
+import requests
 
 # ! use only external url !
+
+
 
 # backgroung color
 
@@ -29,19 +33,6 @@ st.image(img)
 st.title("StrideCare")
 st.subheader("Analyze your stride, strengthen your run, prevent injuries.")
 
-# for rerun:
-# @st.cache_resource - to reuse the same model
-# for model:
-# @st.cache_resource
-# def load_model():
-#     model = torchvision.models.resnet50(weights=ResNet50_Weights.DEFAULT)
-#     model.eval()
-#     return model
-
-# model = load_model()
-
-
-#
 # input user's params:
 st.markdown("<h3 style='font-size:28px;'>Enter your age</h3>", unsafe_allow_html=True)
 age = st.number_input("", min_value=0, max_value=120, step=1)
@@ -57,14 +48,6 @@ st.markdown("<h3 style='font-size:28px;'>Select your gender:</h3>", unsafe_allow
 gender = st.radio("", ["Male", "Female"])
 
 
-
-
-#st.write(f"Your age is {age} years.")
-#st.write(f"Your weight is {weight} kg.")
-#st.write(f"Your height is {height} cm.")
-#st.write(f"You selected: {gender}")
-
-
 video_file = st.file_uploader("Upload a video of yourself running:", type=["mp4", "mov", "avi"])
 
 
@@ -76,6 +59,9 @@ if video_file is not None:
 
     if st.button("Predict"):
         st.write("Analyzing video...")
+        url = "https://localhost:8000/generate_stickfigure"
+        # cap = cv2.VideoCapture(video_file)
+        response = requests.post(url, files={"Video": video_file.getvalue()})
         import time
         time.sleep(2)
         st.success("No injury detected.")
@@ -83,8 +69,8 @@ else:
     st.info("Please upload a video to get started.")
 
 
+if st.button("Predicts"):
 
-if st.button("Predict"):
         st.write("Analyzing video...")
 
 #st.success("No injury detected.")
