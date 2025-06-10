@@ -18,7 +18,7 @@ st.markdown(
 )
 
 # Load the image from file
-img = Image.open("1177163_9202.jpg")
+img = Image.open("cover.png")
 
 # Resize the image (width=px, height=2px)
 img = img.resize((1000, 500))
@@ -40,7 +40,7 @@ st.title("Injury Detection from Video")
 # model = load_model()
 
 
-# 
+#
 # input user's params:
 st.markdown("<h3 style='font-size:28px;'>Enter your age</h3>", unsafe_allow_html=True)
 age = st.number_input("", min_value=0, max_value=120, step=1)
