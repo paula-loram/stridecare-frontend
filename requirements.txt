@@ -3,3 +3,6 @@ uvicorn
 streamlit
 numpy
 pandas
+pillow
+opencv-python
+cv2
