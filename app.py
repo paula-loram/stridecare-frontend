@@ -43,17 +43,17 @@ st.title("StrideCare")
 st.subheader("Please provide the following information for us to tailor the analysis to your running style and health needs.")
 
 # input user's params:
-st.markdown("<h3 style='font-size:20px;'>Enter your age</h3>", unsafe_allow_html=True)
-age = st.number_input(" ", min_value=0, max_value=120, step=1)
+st.markdown("<h3 style='font-size:25px;'>Enter your age</h3>", unsafe_allow_html=True)
+age = st.number_input("Age", min_value=0, max_value=120, step=1)
 
-st.markdown("<h3 style='font-size:20px;'>Enter your weight (kg)</h3>", unsafe_allow_html=True)
-weight = st.number_input(" ", min_value=0.0, max_value=300.0, step=0.1)
+st.markdown("<h3 style='font-size:25px;'>Enter your weight (kg)</h3>", unsafe_allow_html=True)
+weight = st.number_input("Weight (kg)", min_value=0.0, max_value=300.0, step=0.1)
 
-st.markdown("<h3 style='font-size:20px;'>Enter your height (cm)</h3>", unsafe_allow_html=True)
-height = st.number_input(" ", min_value=0.0, max_value=300.0, step=0.1)
+st.markdown("<h3 style='font-size:25px;'>Enter your height (cm)</h3>", unsafe_allow_html=True)
+height = st.number_input("Height (cm)", min_value=0.0, max_value=300.0, step=0.1)
 
-st.markdown("<h3 style='font-size:20px;'>Select your gender:</h3>", unsafe_allow_html=True)
-gender = st.selectbox(" ", ("Female", "Male"))
+st.markdown("<h3 style='font-size:25px;'>Select your gender:</h3>", unsafe_allow_html=True)
+gender = st.selectbox("Gender", ("Female", "Male"))
 
 
 #gender = st.radio(["Male", "Female"])
