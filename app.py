@@ -106,19 +106,14 @@ if video_file is not None:
                 if response.status_code == 200:
                     st.success("Video uploaded and sent for processing successfully!")
                     result = response.json()
-                    import base64
+
                     video_b64 = result.get("video") or result.get("video_base64")
                     angles = result.get("angles_array")  # <-- get the angles list from the response
 
                     if video_b64:
-                        video_base64 = base64.b64encode(video_b64).decode()
-                        video_html = f"""
-                            <video width="400" height="225" controls>
-                                <source src="data:video/mp4;base64,{video_base64}" type="video/mp4">
-                                Your browser does not support the video tag.
-                            </video>
-                        """
-                        st.markdown(video_html, unsafe_allow_html=True)
+                        video_bytes = base64.b64decode(video_b64)
+                        st.write("Processed video:")
+                        st.video(video_bytes, format="video/mp4")
                     else:
                         st.error("No video found in the response.")
 
@@ -178,14 +173,16 @@ if video_file is not None:
                 }
 
                 # Get result
+                response = requests.post(FASTAPI_URL2, json=data)
                 result = response.json()
                 prediction = result["prediction"]
                 confidence = result["confidence"]
                 prob_dict = result["all_class_probabilities"]
 
                 # Sort and map probabilities
-                sorted_probs = sorted(prob_dict.items(), key=lambda x: x[1], reverse=True)
-                top_3 = [(MODEL_OUTPUT_LABELS[int(i)], p) for i, p in sorted_probs[:3]]
+                probs_with_labels = list(zip(MODEL_OUTPUT_LABELS, prob_dict))
+                sorted_probs = sorted(probs_with_labels, key=lambda x: x[1], reverse=True)
+                top_3 = sorted_probs[:3]
 
                 # Display main prediction
                 if prediction != "No injury":
@@ -207,6 +204,11 @@ if video_file is not None:
 
                 # Save for GPT prompt
                 predicted_injury = top_3[0][0]
+                # st.session_state.predicted_injury = predicted_injury
+                # st.session_state.age = age
+                # st.session_state.gender = gender
+                # st.session_state.height = height
+                # st.session_state.weight = weight
                 alt_predictions = ", ".join([f"{label} ({prob*100:.1f}%)" for label, prob in top_3[1:]])
 
             except requests.exceptions.ConnectionError:
@@ -219,63 +221,62 @@ if video_file is not None:
 
 # Injury type dict #these are the same ''MODEL_OUTPUT_LABELS''
 # Providing an informed description with no jargon
-    injury_types = {
-    "No injury": "Runner has good form, and is not prone to injury",
-    "Foot/Ankle": "Runner shows signs of stress or dysfunction in the foot or ankle, possibly indicating an issue with their arch-heel, an achilles issue, or ankle instability.",
-    "Hip/Pelvis": "Runner exhibits movement patterns or weaknesses around the hip/pelvis, which could be caused by their glutes, hip impingement, or poor pelvic stability.",
-    "Thigh": "A biomechanical indicator of strain or overuse in the thigh muscles, commonly involving the hamstrings or quadriceps, which may lead to strains or muscle imbalances.",
-    "Lower Leg": "Runner may be at risk for conditions like shin splints or calf strain, often due to overuse, poor shock absorption, or inadequate lower-leg strength."
-}
+            injury_types = {
+            "No injury": "Runner has good form, and is not prone to injury",
+            "Foot/Ankle": "Runner shows signs of stress or dysfunction in the foot or ankle, possibly indicating an issue with their arch-heel, an achilles issue, or ankle instability.",
+            "Hip/Pelvis": "Runner exhibits movement patterns or weaknesses around the hip/pelvis, which could be caused by their glutes, hip impingement, or poor pelvic stability.",
+            "Thigh": "A biomechanical indicator of strain or overuse in the thigh muscles, commonly involving the hamstrings or quadriceps, which may lead to strains or muscle imbalances.",
+            "Lower Leg": "Runner may be at risk for conditions like shin splints or calf strain, often due to overuse, poor shock absorption, or inadequate lower-leg strength."
+        }
 
 
-        # OpenAI key
-    openai.api_key = st.secrets["OPEN_AI_KEY_POlINA"]
+                # OpenAI key
+            openai.api_key = st.secrets["OPEN_AI_KEY_POlINA"]
 
 
-    # GPT-based report generation
-    def injury_report(predicted_injury, age, gender, height, weight, max_tokens=250): # Tokens determine the number of words in the summary
-        system_prompt = (
-            "You are a friendly and helpful Sports Therapist. "
-            "You are to explain the runner's injury assessment results using concise and simple language that's easy for the runner to understand. "
-            "You avoid medical jargon, speak with warmth, and gently guide the runner on what to do next to address their injury, which involves a Recovery Strategy, Stretching Plan, and Strengthening Plan. "
-            "Limit to about 200 words. "
-        )
+            # GPT-based report generation
+            def injury_report(predicted_injury, age, gender, height, weight, max_tokens=250): # Tokens determine the number of words in the summary
+                system_prompt = (
+                    "You are a friendly and helpful Sports Therapist. "
+                    "You are to explain the runner's injury assessment results using concise and simple language that's easy for the runner to understand. "
+                    "You avoid medical jargon, speak with warmth, and gently guide the runner on what to do next to address their injury, which involves a Recovery Strategy, Stretching Plan, and Strengthening Plan. "
+                    "Limit to about 200 words. "
+                )
 
-        prompt = f"""
-        Our, StrideCare, running-injury assessment AI model predicted: {injury_types.get(predicted_injury, 'Unkown Injury')}
+                prompt = f"""
+                Our, StrideCare, running-injury assessment AI model predicted: {injury_types.get(predicted_injury, 'Unkown Injury')}
 
-        The runner's details:
-        - Age: {age}
-        - Gender: {gender}
-        - Height: {height}
-        - Weight: {weight}
+                The runner's details:
+                - Age: {age}
+                - Gender: {gender}
+                - Height: {height}
+                - Weight: {weight}
 
-        In a friendly, concise, and detailed manner without jargon, please provide a complete-plan to help the runner address their injury.
-        We want to provide a full-complete plan which addresses their {predicted_injury} injury:
-            Recovery strategies (e.g. resting, walking, swimming, etc.) which is relevant to their {predicted_injury} injury,
-            A specific and tailored Stretching plan addressing their {predicted_injury} injury, we want the names of stretches, how many repetitions/seconds and number of sets,
-            and we want a specific and tailored Strengthening plan for the {predicted_injury} injury, including weighted and/or free-weight exercises with ideally as little equipment as possible, please provide the names of these exercises along with number of repetitions and sets.
-        Remember, the plan is to ultimately help them run injury free with this tailored plan.
-        """
+                In a friendly, concise, and detailed manner without jargon, please provide a complete-plan to help the runner address their injury.
+                We want to provide a full-complete plan which addresses their {predicted_injury} injury:
+                    Recovery strategies (e.g. resting, walking, swimming, etc.) which is relevant to their {predicted_injury} injury,
+                    A specific and tailored Stretching plan addressing their {predicted_injury} injury, we want the names of stretches, how many repetitions/seconds and number of sets,
+                    and we want a specific and tailored Strengthening plan for the {predicted_injury} injury, including weighted and/or free-weight exercises with ideally as little equipment as possible, please provide the names of these exercises along with number of repetitions and sets.
+                Remember, the plan is to ultimately help them run injury free with this tailored plan.
+                """
 
-        response = openai.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=max_tokens
-        )
+                response = openai.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=max_tokens
+                )
 
-        return response.choices[0].message.content.strip()
+                return response.choices[0].message.content.strip()
 
 
     ## Calling upon injury_report using streamlit
-    if st.button("Get Injury Report"):
         # Calls upon injury_report with the inputs from the streamlit website
-        report = injury_report(predicted_injury, age, gender, height, weight)
-        st.subheader("Injury Recovery Plan")
-        st.write(report)
+            report = injury_report(predicted_injury, age, gender, height, weight)
+            st.subheader("Injury Recovery Plan")
+            st.write(report)
 
 
             #     response = requests.post(FASTAPI_URL2, json=data)
