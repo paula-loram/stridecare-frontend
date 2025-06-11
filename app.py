@@ -44,16 +44,16 @@ st.subheader("Please provide the following information for us to tailor the anal
 
 # input user's params:
 st.markdown("<h3 style='font-size:20px;'>Enter your age</h3>", unsafe_allow_html=True)
-age = st.number_input(min_value=0, max_value=120, step=1)
+age = st.number_input(" ", min_value=0, max_value=120, step=1)
 
 st.markdown("<h3 style='font-size:20px;'>Enter your weight (kg)</h3>", unsafe_allow_html=True)
-weight = st.number_input(min_value=0.0, max_value=300.0, step=0.1)
+weight = st.number_input(" ", min_value=0.0, max_value=300.0, step=0.1)
 
 st.markdown("<h3 style='font-size:20px;'>Enter your height (cm)</h3>", unsafe_allow_html=True)
-height = st.number_input(min_value=0.0, max_value=300.0, step=0.1)
+height = st.number_input(" ", min_value=0.0, max_value=300.0, step=0.1)
 
 st.markdown("<h3 style='font-size:20px;'>Select your gender:</h3>", unsafe_allow_html=True)
-gender = st.selectbox("Female", "Male")
+gender = st.selectbox(" ", ("Female", "Male"))
 
 
 #gender = st.radio(["Male", "Female"])
@@ -159,11 +159,8 @@ if video_file is not None:
                 st.error("Could not connect to the FastAPI server. Please ensure it's running.")
             except Exception as e:
                 st.error(f"An unexpected error occurred: {e}")
-        # import time
-        # time.sleep(2)
-        # st.success("No injury detected."
 
-
+# # --- Injury Detection ---
         FASTAPI_URL2 = "https://stridecare-25101518845.europe-west2.run.app/predict/"
         with st.spinner("Analyzing video for injury detection... This might take a while."):
             try:
