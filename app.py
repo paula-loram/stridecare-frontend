@@ -4,8 +4,18 @@ import requests
 import pandas as pd
 import time
 import matplotlib.pyplot as plt
+import openai
+import base64
 
-# ! use only external url !
+# --- Model's output labels and their order --- --------> DOES ORDER MATTER?
+MODEL_OUTPUT_LABELS = [
+    "No injury",
+    "Knee",
+    "Foot/Ankle",
+    "Hip/Pelvis",
+    "Thigh",
+    "Lower Leg"
+]
 
 
 # backgroung color
@@ -101,9 +111,14 @@ if video_file is not None:
                     angles = result.get("angles_array")  # <-- get the angles list from the response
 
                     if video_b64:
-                        video_bytes = base64.b64decode(video_b64)
-                        st.write("Processed video:")
-                        st.video(video_bytes, format="video/mp4")
+                        video_base64 = base64.b64encode(video_bytes).decode()
+                        video_html = f"""
+                            <video width="400" height="225" controls>
+                                <source src="data:video/mp4;base64,{video_base64}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        """
+                        st.markdown(video_html, unsafe_allow_html=True)
                     else:
                         st.error("No video found in the response.")
 
@@ -119,8 +134,6 @@ if video_file is not None:
                             'R_hip_X', 'R_hip_Y'
                         ]
                         df_angles.columns = plot_columns
-                        # st.write("Detected Angles:")
-                        # st.dataframe(df_angles)
 
 
 
@@ -163,23 +176,125 @@ if video_file is not None:
                     "height": height,
                     "gender": gender
                 }
-                response = requests.post(FASTAPI_URL2, json=data)
-                if response.status_code == 200:
-                    st.success("Injury detection completed successfully!")
-                    result = response.json()
-                    # Display all returned information
-                    st.write("### Prediction Result")
-                    st.write(f"**Prediction:** {result.get('prediction')}")
-                    st.write(f"**Confidence:** {result.get('confidence')}")
-                    st.write("**All Class Probabilities:**")
-                    st.write(result.get("all_class_probabilities"))
-                    st.write("**Details:**")
-                    st.json(result.get("details"))
-                    st.write("**Raw Response:**")
-                    st.json(result)
+
+                # Get result
+                result = response.json()
+                prediction = result["prediction"]
+                confidence = result["confidence"]
+                prob_dict = result["all_class_probabilities"]
+
+                # Sort and map probabilities
+                sorted_probs = sorted(prob_dict.items(), key=lambda x: x[1], reverse=True)
+                top_3 = [(MODEL_OUTPUT_LABELS[int(i)], p) for i, p in sorted_probs[:3]]
+
+                # Display main prediction
+                if prediction != "No injury":
+                    st.markdown(
+                        f"## 😟 Uh-oh! A **risk of injury** was detected.\n"
+                        f"**Likely issue:** *{prediction}*  \n"
+                        f"**Confidence:** {confidence*100:.1f}%"
+                    )
                 else:
-                    st.error("No angles data available. Please analyze a video first.")
+                    st.markdown(
+                        f"## 🎉 Great news — You're looking strong!\n"
+                        f"**No injury detected** with {confidence*100:.1f}% confidence. Keep running happy!"
+                    )
+
+                # Friendly top 3 breakdown
+                st.markdown("### 🔍 Here's what StrideCare saw as most likely:")
+                for i, (label, prob) in enumerate(top_3, 1):
+                    st.markdown(f"{i}. **{label}** — {prob*100:.1f}%")
+
+                # Save for GPT prompt
+                predicted_injury = top_3[0][0]
+                alt_predictions = ", ".join([f"{label} ({prob*100:.1f}%)" for label, prob in top_3[1:]])
+
             except requests.exceptions.ConnectionError:
                 st.error("Could not connect to the FastAPI server. Please ensure it's running.")
             except Exception as e:
                 st.error(f"An unexpected error occurred: {e}")
+
+
+# GPT-based report generation
+
+# Injury type dict #these are the same ''MODEL_OUTPUT_LABELS''
+# Providing an informed description with no jargon
+    injury_types = {
+    "No injury": "Runner has good form, and is not prone to injury",
+    "Foot/Ankle": "Runner shows signs of stress or dysfunction in the foot or ankle, possibly indicating an issue with their arch-heel, an achilles issue, or ankle instability.",
+    "Hip/Pelvis": "Runner exhibits movement patterns or weaknesses around the hip/pelvis, which could be caused by their glutes, hip impingement, or poor pelvic stability.",
+    "Thigh": "A biomechanical indicator of strain or overuse in the thigh muscles, commonly involving the hamstrings or quadriceps, which may lead to strains or muscle imbalances.",
+    "Lower Leg": "Runner may be at risk for conditions like shin splints or calf strain, often due to overuse, poor shock absorption, or inadequate lower-leg strength."
+}
+
+
+        # OpenAI key
+    openai.api_key = st.secrets["OPEN_AI_KEY_POlINA"]
+
+
+    # GPT-based report generation
+    def injury_report(predicted_injury, age, gender, height, weight, max_tokens=250): # Tokens determine the number of words in the summary
+        system_prompt = (
+            "You are a friendly and helpful Sports Therapist. "
+            "You are to explain the runner's injury assessment results using concise and simple language that's easy for the runner to understand. "
+            "You avoid medical jargon, speak with warmth, and gently guide the runner on what to do next to address their injury, which involves a Recovery Strategy, Stretching Plan, and Strengthening Plan. "
+            "Limit to about 200 words. "
+        )
+
+        prompt = f"""
+        Our, StrideCare, running-injury assessment AI model predicted: {injury_types.get(predicted_injury, 'Unkown Injury')}
+
+        The runner's details:
+        - Age: {age}
+        - Gender: {gender}
+        - Height: {height}
+        - Weight: {weight}
+
+        In a friendly, concise, and detailed manner without jargon, please provide a complete-plan to help the runner address their injury.
+        We want to provide a full-complete plan which addresses their {predicted_injury} injury:
+            Recovery strategies (e.g. resting, walking, swimming, etc.) which is relevant to their {predicted_injury} injury,
+            A specific and tailored Stretching plan addressing their {predicted_injury} injury, we want the names of stretches, how many repetitions/seconds and number of sets,
+            and we want a specific and tailored Strengthening plan for the {predicted_injury} injury, including weighted and/or free-weight exercises with ideally as little equipment as possible, please provide the names of these exercises along with number of repetitions and sets.
+        Remember, the plan is to ultimately help them run injury free with this tailored plan.
+        """
+
+        response = openai.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=max_tokens
+        )
+
+        return response.choices[0].message.content.strip()
+
+
+    ## Calling upon injury_report using streamlit
+    if st.button("Get Injury Report"):
+        # Calls upon injury_report with the inputs from the streamlit website
+        report = injury_report(predicted_injury, age, gender, height, weight)
+        st.subheader("Injury Recovery Plan")
+        st.write(report)
+
+
+            #     response = requests.post(FASTAPI_URL2, json=data)
+            #     if response.status_code == 200:
+            #         st.success("Injury detection completed successfully!")
+            #         result = response.json()
+            #         # Display all returned information
+            #         st.write("### Prediction Result")
+            #         st.write(f"**Prediction:** {result.get('prediction')}")
+            #         st.write(f"**Confidence:** {result.get('confidence')}")
+            #         st.write("**All Class Probabilities:**")
+            #         st.write(result.get("all_class_probabilities"))
+            #         st.write("**Details:**")
+            #         st.json(result.get("details"))
+            #         st.write("**Raw Response:**")
+            #         st.json(result)
+            #     else:
+            #         st.error("No angles data available. Please analyze a video first.")
+            # except requests.exceptions.ConnectionError:
+            #     st.error("Could not connect to the FastAPI server. Please ensure it's running.")
+            # except Exception as e:
+            #     st.error(f"An unexpected error occurred: {e}")
