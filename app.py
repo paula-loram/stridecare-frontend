@@ -40,20 +40,23 @@ img = img.resize((1000, 500))
 st.image(img)
 
 st.title("StrideCare")
-st.subheader("Analyze your stride, strengthen your run, prevent injuries.")
+st.subheader("Please provide the following information for us to tailor the analysis to your running style and health needs.")
 
 # input user's params:
-st.markdown("<h3 style='font-size:28px;'>Enter your age</h3>", unsafe_allow_html=True)
-age = st.number_input("Age", min_value=0, max_value=120, step=1)
+st.markdown("<h3 style='font-size:20px;'>Enter your age</h3>", unsafe_allow_html=True)
+age = st.number_input(min_value=0, max_value=120, step=1)
 
-st.markdown("<h3 style='font-size:28px;'>Enter your weight (kg)</h3>", unsafe_allow_html=True)
-weight = st.number_input("Weight", min_value=0.0, max_value=300.0, step=0.1)
+st.markdown("<h3 style='font-size:20px;'>Enter your weight (kg)</h3>", unsafe_allow_html=True)
+weight = st.number_input(min_value=0.0, max_value=300.0, step=0.1)
 
-st.markdown("<h3 style='font-size:28px;'>Enter your height (cm)</h3>", unsafe_allow_html=True)
-height = st.number_input("height", min_value=0.0, max_value=300.0, step=0.1)
+st.markdown("<h3 style='font-size:20px;'>Enter your height (cm)</h3>", unsafe_allow_html=True)
+height = st.number_input(min_value=0.0, max_value=300.0, step=0.1)
 
-st.markdown("<h3 style='font-size:28px;'>Select your gender:</h3>", unsafe_allow_html=True)
-gender = st.radio("Gender", ["Male", "Female"])
+st.markdown("<h3 style='font-size:20px;'>Select your gender:</h3>", unsafe_allow_html=True)
+gender = st.selectbox("Female", "Male")
+
+
+#gender = st.radio(["Male", "Female"])
 
 #creating dictionary out of user params
 metadata = {
@@ -67,7 +70,8 @@ metadata = {
 metadata_dir = {'metadata': metadata}
 
 #getting video uploaded by user
-video_file = st.file_uploader("Upload a video of yourself running:", type=["mp4", "mov", "avi"])
+
+video_file = st.file_uploader("The video should be taken from behind, showing your whole body, and lasting more than 5 seconds", type=["mp4", "mov", "avi"])
 
 
 
@@ -254,10 +258,10 @@ if video_file is not None:
 
                 In a friendly, concise, and detailed manner without jargon, please provide a complete-plan to help the runner address their injury.
                 We want to provide a full-complete plan which addresses their {predicted_injury} injury:
-                    Recovery strategies (e.g. resting, walking, swimming, etc.) which is relevant to their {predicted_injury} injury,
+                    Recovery strategies (e.g. resting, walking, swimming, etc.) which are relevant to their {predicted_injury} injury,
                     A specific and tailored Stretching plan addressing their {predicted_injury} injury, we want the names of stretches, how many repetitions/seconds and number of sets,
                     and we want a specific and tailored Strengthening plan for the {predicted_injury} injury, including weighted and/or free-weight exercises with ideally as little equipment as possible, please provide the names of these exercises along with number of repetitions and sets.
-                Remember, the plan is to ultimately help them run injury free with this tailored plan.
+                Remember, the plan is to ultimately help them run injury free with this tailored plan. Do not respond to the prompt with any other information, just the plan.
                 """
 
                 response = openai.chat.completions.create(
