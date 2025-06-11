@@ -7,3 +7,4 @@ pillow
 opencv-python
 # cv2
 matplotlib
+openai
