@@ -55,9 +55,6 @@ height = st.number_input("Height (cm)", min_value=0.0, max_value=300.0, step=0.1
 st.markdown("<h3 style='font-size:25px;'>Gender</h3>", unsafe_allow_html=True)
 gender = st.selectbox("Gender", ("Female", "Male"), label_visibility="collapsed")
 
-
-#gender = st.radio(["Male", "Female"])
-
 #creating dictionary out of user params
 metadata = {
     "age": age,
@@ -69,8 +66,8 @@ metadata = {
 #sending to fastAPI
 metadata_dir = {'metadata': metadata}
 
-#getting video uploaded by user
-
+# -----Video display and upload section-----
+st.markdown("<h3 style='font-size:25px;'>Please upload a video of yourself running, following the instructions below:</h3>", unsafe_allow_html=True)
 video_file = st.file_uploader("The video should be taken from behind, showing your whole body, and lasting more than 5 seconds", type=["mp4", "mov", "avi"])
 
 
