@@ -77,7 +77,7 @@ if video_file is not None:
         # time.sleep(2)
         # st.success("No injury detected.")
         start_time = time.time()
-        FASTAPI_URL = "http://127.0.0.1:8000/get_stick_fig_video/"
+        FASTAPI_URL = "https://stridecare-25101518845.europe-west2.run.app/get_stick_fig_video/"
 
         with st.spinner("Uploading and processing video... This might take a while."):
             try:
@@ -152,7 +152,7 @@ if video_file is not None:
         # st.success("No injury detected."
 
 
-        FASTAPI_URL2 = "http://127.0.0.1:8000/predict/"
+        FASTAPI_URL2 = "https://stridecare-25101518845.europe-west2.run.app/predict/"
         with st.spinner("Analyzing video for injury detection... This might take a while."):
             try:
                 angles_list = st.session_state.df_angles.values.tolist()  # Convert DataFrame to list of lists
