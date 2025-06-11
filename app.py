@@ -111,7 +111,7 @@ if video_file is not None:
                     angles = result.get("angles_array")  # <-- get the angles list from the response
 
                     if video_b64:
-                        video_base64 = base64.b64encode(video_bytes).decode()
+                        video_base64 = base64.b64encode(video_b64).decode()
                         video_html = f"""
                             <video width="400" height="225" controls>
                                 <source src="data:video/mp4;base64,{video_base64}" type="video/mp4">
