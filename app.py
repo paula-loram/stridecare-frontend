@@ -3,13 +3,9 @@ import tempfile
 from PIL import Image
 import cv2
 import requests
-
-# ! use only external url !
-
-
+import json
 
 # backgroung color
-
 st.markdown(
     """
     <style>
@@ -37,18 +33,29 @@ st.subheader("Analyze your stride, strengthen your run, prevent injuries.")
 st.markdown("<h3 style='font-size:28px;'>Enter your age</h3>", unsafe_allow_html=True)
 age = st.number_input("", min_value=0, max_value=120, step=1)
 
-st.markdown("<h3 style='font-size:28px;'>Enter your weight (kg)</h3>", unsafe_allow_html=True)
-weight = st.number_input("", min_value=0.0, max_value=300.0, step=0.1)
-
 st.markdown("<h3 style='font-size:28px;'>Enter your height (cm)</h3>", unsafe_allow_html=True)
 height = st.number_input("", min_value=0.0, max_value=250.0, step=0.1)
 
+st.markdown("<h3 style='font-size:28px;'>Enter your weight (kg)</h3>", unsafe_allow_html=True)
+weight = st.number_input("", min_value=0.0, max_value=300.0, step=0.1)
 
 st.markdown("<h3 style='font-size:28px;'>Select your gender:</h3>", unsafe_allow_html=True)
 gender = st.radio("", ["Male", "Female"])
 
+#creating dictionary out of user params
+metadata = {
+    "age": age,
+    "height": height,
+    "weight": weight,
+    "gender": gender
+}
 
+#sending to fastAPI
+metadata_dir = {'metadata': metadata}
+
+#getting video uploaded by user
 video_file = st.file_uploader("Upload a video of yourself running:", type=["mp4", "mov", "avi"])
+
 
 
 if video_file is not None:
@@ -62,6 +69,7 @@ if video_file is not None:
         url = "https://localhost:8000/generate_stickfigure"
         # cap = cv2.VideoCapture(video_file)
         response = requests.post(url, files={"Video": video_file.getvalue()})
+        
         import time
         time.sleep(2)
         st.success("No injury detected.")
@@ -76,3 +84,13 @@ if st.button("Predicts"):
 #st.success("No injury detected.")
 if st.button("Surprise"):
     st.balloons()
+
+# background_tasks : call on another endpoint
+#send metadata w video (op1)
+
+#option 2: sequentially
+#but starting with predict endpoint (big), then we can do get stickfigure
+# coord + video embedded, returning new video in api
+#easier: get videos in: coordinates as result of endpoint
+#then second endpoint w metadata + coordinates --> model prediction to get injury classes
+#can also display angle plot
