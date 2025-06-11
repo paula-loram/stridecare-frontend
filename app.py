@@ -5,6 +5,8 @@ import cv2
 import requests
 import json
 import pandas as pd
+import time
+import matplotlib.pyplot as plt
 
 # ! use only external url !
 
@@ -40,8 +42,8 @@ age = st.number_input("Age", min_value=0, max_value=120, step=1)
 st.markdown("<h3 style='font-size:28px;'>Enter your weight (kg)</h3>", unsafe_allow_html=True)
 weight = st.number_input("Weight", min_value=0.0, max_value=300.0, step=0.1)
 
-st.markdown("<h3 style='font-size:28px;'>Enter your weight (kg)</h3>", unsafe_allow_html=True)
-weight = st.number_input("", min_value=0.0, max_value=300.0, step=0.1)
+st.markdown("<h3 style='font-size:28px;'>Enter your height (cm)</h3>", unsafe_allow_html=True)
+height = st.number_input("height", min_value=0.0, max_value=300.0, step=0.1)
 
 st.markdown("<h3 style='font-size:28px;'>Select your gender:</h3>", unsafe_allow_html=True)
 gender = st.radio("Gender", ["Male", "Female"])
@@ -68,15 +70,16 @@ if video_file is not None:
     # tfile = tempfile.NamedTemporaryFile(delete=False)
     # st.write(video_file)
 
-    if st.button("Predict"):
-        st.write("Analyzing video...")
-        url = "https://localhost:8000/generate_stickfigure"
-        # cap = cv2.VideoCapture(video_file)
-        response = requests.post(url, files={"Video": video_file.getvalue()})
-        
-        import time
-        time.sleep(2)
-        st.success("No injury detected.")
+    if st.button("Analyze Video"):
+        # st.write("Analyzing video...")
+        # url = "https://localhost:8000/generate_stickfigure"
+        # # cap = cv2.VideoCapture(video_file)
+        # response = requests.post(url, files={"Video": video_file.getvalue()})
+
+        # import time
+        # time.sleep(2)
+        # st.success("No injury detected.")
+        start_time = time.time()
         FASTAPI_URL = "http://127.0.0.1:8000/get_stick_fig_video/"
 
         with st.spinner("Uploading and processing video... This might take a while."):
@@ -88,15 +91,10 @@ if video_file is not None:
                         video_file.type
                     )
                 }
-                data = {
-                    "data": json.dumps({
-                        "age": age,
-                        "weight": weight,
-                        "height": height,
-                        "gender": gender
-                    })
-                }
-                response = requests.post(FASTAPI_URL, files=files, data=data)
+
+                response = requests.post(FASTAPI_URL, files=files)
+                elapsed_time = time.time() - start_time
+                st.write(f"Time taken for processing: {elapsed_time:.2f} seconds")
 
                 if response.status_code == 200:
                     st.success("Video uploaded and sent for processing successfully!")
@@ -115,8 +113,35 @@ if video_file is not None:
                     # Display angles as a dataframe if present
                     if angles:
                         df_angles = pd.DataFrame(angles)
-                        st.write("Detected Angles:")
-                        st.dataframe(df_angles)
+                        # Define the columns to plot and their subplot titles
+                        plot_columns = [
+                            'pelvis_X', 'pelvis_Y',
+                            'L_knee_X', 'L_knee_Y',
+                            'R_knee_X', 'R_knee_Y',
+                            'L_hip_X', 'L_hip_Y',
+                            'R_hip_X', 'R_hip_Y'
+                        ]
+                        df_angles.columns = plot_columns
+                        # st.write("Detected Angles:")
+                        # st.dataframe(df_angles)
+
+
+
+                        # Only plot if all columns are present
+                        if all(col in df_angles.columns for col in plot_columns):
+                            fig, axes = plt.subplots(5, 2, figsize=(12, 16))
+                            axes = axes.flatten()
+                            for idx, col in enumerate(plot_columns):
+                                axes[idx].plot(df_angles[col])
+                                axes[idx].set_title(col)
+                                axes[idx].set_xlabel("Frame")
+                                axes[idx].set_ylabel("Value")
+                                axes[idx].set_ylim(-180, 180)  # Assuming angles are in degrees
+                            plt.tight_layout()
+                            st.pyplot(fig)
+                        else:
+                            st.warning("Not all required columns are present in the angles data.")
+                        st.session_state.df_angles = df_angles  # Store df_angles in session state
                     else:
                         st.info("No angles data found in the response.")
                 else:
@@ -129,6 +154,38 @@ if video_file is not None:
         # time.sleep(2)
         # st.success("No injury detected."
 
+
+        FASTAPI_URL2 = "http://127.0.0.1:8000/predict/"
+        with st.spinner("Analyzing video for injury detection... This might take a while."):
+            try:
+                angles_list = st.session_state.df_angles.values.tolist()  # Convert DataFrame to list of lists
+                data = {
+                    "angles": angles_list,
+                    "age": age,
+                    "weight": weight,
+                    "height": height,
+                    "gender": gender
+                }
+                response = requests.post(FASTAPI_URL2, json=data)
+                if response.status_code == 200:
+                    st.success("Injury detection completed successfully!")
+                    result = response.json()
+                    # Display all returned information
+                    st.write("### Prediction Result")
+                    st.write(f"**Prediction:** {result.get('prediction')}")
+                    st.write(f"**Confidence:** {result.get('confidence')}")
+                    st.write("**All Class Probabilities:**")
+                    st.write(result.get("all_class_probabilities"))
+                    st.write("**Details:**")
+                    st.json(result.get("details"))
+                    st.write("**Raw Response:**")
+                    st.json(result)
+                else:
+                    st.error("No angles data available. Please analyze a video first.")
+            except requests.exceptions.ConnectionError:
+                st.error("Could not connect to the FastAPI server. Please ensure it's running.")
+            except Exception as e:
+                st.error(f"An unexpected error occurred: {e}")
 
 
 #st.success("No injury detected.")
