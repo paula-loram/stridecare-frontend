@@ -64,7 +64,7 @@ if video_file is not None:
         # Show stick figure video immediately
         st.video(stick_figure_url)
 
-        # Placeholder for prediction result
+        # Placeholder for prediction result -----------> need it if we put it as background task
         result_placeholder = st.empty()
 
         # Poll prediction status endpoint
