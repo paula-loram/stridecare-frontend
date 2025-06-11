@@ -5,4 +5,5 @@ numpy
 pandas
 pillow
 opencv-python
-cv2
+# cv2
+matplotlib
