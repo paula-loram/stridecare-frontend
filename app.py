@@ -1,9 +1,6 @@
 import streamlit as st
-import tempfile
 from PIL import Image
-import cv2
 import requests
-import json
 import pandas as pd
 import time
 import matplotlib.pyplot as plt
@@ -186,18 +183,3 @@ if video_file is not None:
                 st.error("Could not connect to the FastAPI server. Please ensure it's running.")
             except Exception as e:
                 st.error(f"An unexpected error occurred: {e}")
-
-
-#st.success("No injury detected.")
-if st.button("Surprise"):
-    st.balloons()
-
-# background_tasks : call on another endpoint
-#send metadata w video (op1)
-
-#option 2: sequentially
-#but starting with predict endpoint (big), then we can do get stickfigure
-# coord + video embedded, returning new video in api
-#easier: get videos in: coordinates as result of endpoint
-#then second endpoint w metadata + coordinates --> model prediction to get injury classes
-#can also display angle plot
