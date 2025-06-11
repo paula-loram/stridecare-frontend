@@ -3,6 +3,8 @@ import tempfile
 from PIL import Image
 import cv2
 import requests
+import json
+import pandas as pd
 
 # ! use only external url !
 
@@ -70,23 +72,37 @@ if video_file is not None:
                         video_file.type
                     )
                 }
-                # Send user parameters as a JSON string in a form field
-                import json
                 data = {
-                    "params": json.dumps({
+                    "data": json.dumps({
                         "age": age,
                         "weight": weight,
                         "height": height,
                         "gender": gender
                     })
                 }
-                response = requests.post(FASTAPI_URL, files=files, data=data, stream=True)
+                response = requests.post(FASTAPI_URL, files=files, data=data)
 
                 if response.status_code == 200:
                     st.success("Video uploaded and sent for processing successfully!")
-                    video_bytes = response.content
-                    st.write("Processed video:")
-                    st.video(video_bytes, format="video/mp4")
+                    result = response.json()
+                    import base64
+                    video_b64 = result.get("video") or result.get("video_base64")
+                    angles = result.get("angles_array")  # <-- get the angles list from the response
+
+                    if video_b64:
+                        video_bytes = base64.b64decode(video_b64)
+                        st.write("Processed video:")
+                        st.video(video_bytes, format="video/mp4")
+                    else:
+                        st.error("No video found in the response.")
+
+                    # Display angles as a dataframe if present
+                    if angles:
+                        df_angles = pd.DataFrame(angles)
+                        st.write("Detected Angles:")
+                        st.dataframe(df_angles)
+                    else:
+                        st.info("No angles data found in the response.")
                 else:
                     st.error(f"Error uploading video: {response.status_code} - {response.text}")
             except requests.exceptions.ConnectionError:
