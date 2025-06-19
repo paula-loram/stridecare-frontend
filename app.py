@@ -67,8 +67,8 @@ metadata = {
 metadata_dir = {'metadata': metadata}
 
 # -----Video display and upload section-----
-st.markdown("<h3 style='font-size:25px;'>Please upload a video of yourself running, following the instructions below:</h3>", unsafe_allow_html=True)
-video_file = st.file_uploader("The video should be taken from behind, showing your whole body, and lasting more than 5 seconds", type=["mp4", "mov", "avi"])
+st.markdown("<h3 style='font-size:25px;'>Please upload a video of your run, following the instructions below:</h3>", unsafe_allow_html=True)
+video_file = st.file_uploader("The video should be taken from behind, showing your whole body, and lasting more than 5 seconds.", type=["mp4", "mov", "avi"])
 
 
 
